@@ -100,4 +100,21 @@ pip3 install torch torchvision torchaudio --index-url https://download.pytorch.o
 ```
 
 #### For both CPU and GPU 
-Now we can install the remainder of the packages for this project. 
+Now we can install the remainder of the packages for this project. To start, let's install all extra requirements in `requirements.txt`: 
+```
+pip install -r requirements.txt
+```
+
+Then, we can install LoGONE itself. From the repo directory (e.g. `~/Documents/LoGONE`), type: 
+```
+pip install -e .
+```
+
+### Installing the dataset 
+The dataset used for this project is [LogoDet-3K](https://www.kaggle.com/datasets/lyly99/logodet3k/data?select=LogoDet-3K), which can be installed automatically using configuration scripts provided. Before you can do this, however, you need to setup a [__Kaggle API key__
+](https://www.kaggle.com/docs/api#authentication). Once you have done so, you can run the following setup script from the source directory: 
+
+```
+chmod +x logone/scripts/install_logodet.sh # Makes script executable
+logone/scripts/install_logodet.sh
+```
