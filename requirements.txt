@@ -2,3 +2,4 @@ fiftyone
 kaggle 
 ipython
 gdown
+tqdm
