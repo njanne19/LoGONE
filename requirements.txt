@@ -3,3 +3,4 @@ kaggle
 ipython
 gdown
 tqdm
+torchsummary
