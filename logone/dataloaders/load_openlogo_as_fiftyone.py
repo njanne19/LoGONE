@@ -7,9 +7,8 @@ from tqdm import tqdm
 dataset_name = "OpenLogo"
 dataset_already_loaded = False 
 if fo.dataset_exists(dataset_name):
-    # dataset = fo.load_dataset(dataset_name)
-    # dataset_already_loaded = True
-    fo.delete_dataset(dataset_name)
+    dataset = fo.load_dataset(dataset_name)
+    dataset_already_loaded = True
 
 if not dataset_already_loaded:
     dataset = fo.Dataset(dataset_name) 
