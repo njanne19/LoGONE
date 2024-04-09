@@ -1,7 +1,11 @@
 import torch 
 import torch.nn as nn
 import torchvision 
+from torchvision.transforms import ToTensor
 from torchsummary import summary
+from logone.utilities.featuremaps import visualize_layers_and_input
+import fiftyone as fo 
+from PIL import Image
 
 
 class ResNet50Features(nn.Module):
@@ -30,8 +34,44 @@ if __name__ == "__main__":
     model = ResNet50Features()
     print(model) 
 
-    summary(model, input_size=(3, 224, 224), device='cpu') 
+    # Show the feature map. 
+    # Try to load one of the current datasets: 
+    try: 
+        dataset = fo.load_dataset('OpenLogo') 
+    except: 
+        try: 
+            dataset = fo.load_dataset('LogoDet') 
+        except: 
+            print("Please load a dataset to visualize the feature maps.")
+            dataset = None
+
+    input_tensor = None
+
+    if dataset is not None:  
+        train_dataset = dataset.match({"split": "train"})
+
+        # Get all sample IDs from the filtered dataset 
+        train_sample_ids = train_dataset.values("id")
+
+        # Randomly select one sample ID 
+        random_sample_id = train_sample_ids[0]
+
+        # Load the sample 
+        random_sample = train_dataset[random_sample_id]
+
+        # Load the image
+        image_path = random_sample["filepath"]
+        image = Image.open(image_path)
+
+        # Preprocess the image
+        transform = ToTensor()
+        input_tensor = transform(image).unsqueeze(0)
+
+    
+
+    if input_tensor is None: 
+        input_tensor = torch.rand(1, 3, 224, 224)
 
     model.eval() 
-    input_tensor = torch.randn(1, 3, 224, 224)
     features = model(input_tensor)
+    visualize_layers_and_input(input_tensor, features)
