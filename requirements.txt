@@ -1,6 +1,10 @@
-fiftyone
-kaggle 
-ipython
-gdown
-tqdm
-torchsummary
+fiftyone==0.23.7
+fiftyone_brain==0.16.1
+fiftyone_db==1.1.2
+matplotlib==3.8.3
+Pillow==10.3.0
+setuptools==65.5.0
+torch==2.2.1
+torchsummary==1.5.1
+torchvision==0.17.1
+tqdm==4.66.2
