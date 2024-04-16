@@ -5,6 +5,7 @@
 original_dir=$(pwd) 
 
 # Change to the script's directory 
+mkdir $(dirname $0)/../data
 cd $(dirname $0)/../data
 
 gdown --fuzzy https://drive.google.com/open\?id\=1p1BWofDJOKXqCtO0JPT5VyuIPOsuxOuj
