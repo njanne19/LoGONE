@@ -100,7 +100,9 @@ def projective_transformation(img, K):
 def apply_cylindrical_transformation(img):
     h, w = img.shape[:2]
     diag = 500
-    K = np.array([[diag,0,w/2],[0,diag,h/2],[0,0,1]]) # mock intrinsics
+    vert = 0.5 # 'object pitch'
+    horiz = 2 # left/right cylinder shift
+    K = np.array([[diag,0,w/horiz],[0,diag,h/vert],[0,0,1]]) # mock intrinsics
     return cylindricalWarp(img, K)
 
 def apply_projective_transformation(img):
@@ -120,13 +122,15 @@ def test_transformation(img_file):
         
         # Cylindrical transformation
         cv_img = cv2.imread(img_filepath)
+        padding = 100
+        cv_img = cv2.copyMakeBorder(cv_img, padding, padding, padding, padding, cv2.BORDER_CONSTANT, None, value=0)
         img_cylindrical = apply_cylindrical_transformation(cv_img)
         cv2.imwrite(os.path.join(save_dir, f'{basename}_cylindrical.jpg'), img_cylindrical)
 
         # projective transformation
-        cv_img = cv2.imread(img_filepath)
-        img_projective = apply_projective_transformation(cv_img)
-        cv2.imwrite(os.path.join(save_dir, f'{basename}_projective.jpg'), img_projective)
+        # cv_img = cv2.imread(img_filepath)
+        # img_projective = apply_projective_transformation(cv_img)
+        # cv2.imwrite(os.path.join(save_dir, f'{basename}_projective.jpg'), img_projective)
         
         # Projective transformation
         # img_projective = apply_projective_transform(img)
