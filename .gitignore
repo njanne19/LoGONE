@@ -1,6 +1,6 @@
 # Project specific ignores 
 logone/data
-
+logone/models/weights
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks,macos,linux,windows

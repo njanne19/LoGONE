@@ -114,9 +114,8 @@ if not dataset_already_loaded:
         status = train_test_lookup.get(filename, None)
 
         if filename in train_test_lookup: 
-            sample["split"] = train_test_lookup[filename]
+            sample.tags.append("default_split/" + train_test_lookup[filename])
             sample.save() 
-
 
 
 
