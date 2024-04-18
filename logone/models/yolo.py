@@ -24,7 +24,7 @@ def download_file(url, filepath):
         print(f"{filepath} already exists. Skipping download...")
 
 # Load a model 
-model = "yolov8l"
+model = "yolov8n"
 
 
 # Check to see if a weights folder for this model 
@@ -49,13 +49,13 @@ dataset_file = 'logone/data/openlogo/yolo_split1/data.yaml'
 # Train the model 
 results = model.train(
     data=dataset_file, 
-    epochs=1000, 
+    epochs=100, 
     imgsz=640, 
     project='logone',
     batch=-1,
-    save_period=250,
+    save_period=25,
     cache = True,
-    name='yolov8l-allclass',)
+    name='yolov8n-allclass',)
 
 # Evalute the model 
 metrics = model.val() 
