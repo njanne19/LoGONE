@@ -5,59 +5,6 @@ import random as r
 import numpy as np
 from PIL import Image, ImageOps, ImageTransform
 
-def apply_affine_transform(image):
-    # Applying an example affine transformation (translation)
-    return image.transform(image.size, ImageTransform.AffineTransform((1, 0, 50, 0, 1, 50)))
-
-def apply_cylindrical_transform(image):
-    # Example cylindrical transform using warp
-    width, height = image.size
-    def map_cylindrical(x, y):
-        return (
-            width * (np.arctan((x - width / 2) / width * 2) / np.pi + 0.5),
-            height * ((y - height / 2) / (width / 2) * np.sqrt((x - width / 2)**2 + width**2) + 0.5)
-        )
-    return image.transform(image.size, ImageTransform.QuadTransform(map_cylindrical))
-
-def apply_projective_transform(image):
-    # Projective (homography) transformation
-    width, height = image.size
-    coeffs = ImageTransform.find_coeffs(
-        [(0, 0), (width, 0), (width, height), (0, height)],
-        [(0, height * 0.1), (width, 0), (width * 0.9, height), (width * 0.1, height * 0.9)]
-    )
-    return image.transform((width, height), Image.PERSPECTIVE, coeffs, Image.BICUBIC)
-
-def apply_rotation(image):
-    # Rotate the image by 45 degrees
-    return image.rotate(45)
-
-def apply_shear(image):
-    # Shearing the image
-    return image.transform(image.size, ImageTransform.AffineTransform((1, 0.5, 0, 0.1, 1, 0)))
-
-def transform_and_save(image_path):
-    with Image.open(image_path) as img:
-        basename = os.path.basename(image_path)
-        
-        # Affine transformation
-        
-        # Cylindrical transformation
-        # img_cylindrical = apply_cylindrical_transform(img)
-        # img_cylindrical.save(f'transformed_images/{basename}_cylindrical.jpg')
-        
-        # Projective transformation
-        # img_projective = apply_projective_transform(img)
-        # img_projective.save(f'transformed_images/{basename}_projective.jpg')
-        
-        # Rotation
-        img_rotated = apply_rotation(img)
-        img_rotated.save(f'transformed_images/{basename}_rotated.jpg')
-        
-        # Shear transformation
-        img_sheared = apply_shear(img)
-        img_sheared.save(f'transformed_images/{basename}_sheared.jpg')
-
 def cylindricalWarp(img, K, rev=False):
     """This function returns the cylindrical warp for a given image and intrinsics matrix K"""
     h_,w_ = img.shape[:2]
@@ -79,21 +26,6 @@ def cylindricalWarp(img, K, rev=False):
     # warp the image according to cylindrical coords
     return cv2.remap(img_rgba, B[:,:,0].astype(np.float32), B[:,:,1].astype(np.float32), cv2.INTER_AREA, borderMode=cv2.BORDER_TRANSPARENT)
 
-    
-def projective_transformation(img, K):
-    """
-    warp img accroding to projective matrix K
-    """
-    h_,w_ = img.shape[:2]
-    # pixel coordinates
-    y_i, x_i = np.indices((h_,w_))
-    X = np.stack([x_i,y_i,np.ones_like(x_i)],axis=-1).reshape(h_*w_,3) # to homog
-    X = (K.dot(X.T).T).reshape(h_,w_,-1)
-
-    img_rgba = cv2.cvtColor(img,cv2.COLOR_BGR2BGRA) # for transparent borders...
-
-    return cv2.remap(img_rgba, X[:,:,0].astype(np.float32), X[:,:,1].astype(np.float32), cv2.INTER_AREA, borderMode=cv2.BORDER_TRANSPARENT)
-
 def apply_cylindrical_transformation(img, diag=800, vert=2, horiz=2):
     """
     apply cylindrical projection, return image after cylindrical projection
@@ -108,10 +40,6 @@ def apply_cylindrical_transformation(img, diag=800, vert=2, horiz=2):
     K = np.array([[diag,0,w/horiz],[0,diag,h/vert],[0,0,1]]) # mock intrinsics
     img_cyl = cylindricalWarp(img, K)
     return img_cyl
-
-def apply_projective_transformation(img):
-    K = np.array([])
-    return projective_transformation(img, K)
 
 def test_random_transformation(img_file, random_seed=0):
     img_filepath = os.path.join(os.getcwd(),'test_images', 'original',img_file)
@@ -158,6 +86,19 @@ def test_transformation(img_file):
         # img_sheared = apply_shear(img)
         # img_sheared.save(os.path.join(save_dir,f'{basename}_sheared.jpg'))
 
+def generate_random_perspective_matrix():
+    a, e = np.random.uniform(0.8, 1.2, 2)  # Slight scaling
+    b, d = np.random.uniform(-0.1, 0.1, 2)  # Mild rotation/skew
+    g, h = np.random.uniform(-0.0005, 0.0005, 2)
+    return np.array([[a, b, 0], [d, e, 0], [g, h, 1]], dtype=np.float32)
+    
+    #return transformation_matrix
+
+def apply_perspective_transform(img, transformation_matrix):
+    h, w = img.shape[:2]
+    transformed_image = cv2.warpPerspective(img, transformation_matrix, (w, h))
+    return transformed_image
+
 def random_cylindrical_transform(img, random_seed=None, padding=100):
     """
     return random cylindrical transform with prameters used for transform
@@ -184,12 +125,14 @@ def load_and_save(original_img_filepath, transformed_img_filepath):
         print('Couldnt load image: ', os.path.basename(original_img_filepath))
         return None, None, None
     cyl_img, d, v, h = random_cylindrical_transform(img, random_seed=None)
+    transformation_matrix = generate_random_perspective_matrix()
+    combo_img = apply_perspective_transform(cyl_img, transformation_matrix)
     # print(transformed_img_filepath)
-    cv2.imwrite(transformed_img_filepath, cyl_img)
+    cv2.imwrite(transformed_img_filepath, combo_img)
     h_, w_ = img.shape[:2]
-    return d,v,h, h_,w_
+    return d,v,h, h_,w_, transformation_matrix
 
-def create_preliminary_dataset(dataset_dir=os.path.join(os.getcwd(), 'test_images')):
+def create_preliminary_dataset(dataset_dir=os.path.join(os.getcwd(), 'logone/utilities/test_images')):
 
     # get paths
     original_path=os.path.join(dataset_dir, 'original')
@@ -197,9 +140,8 @@ def create_preliminary_dataset(dataset_dir=os.path.join(os.getcwd(), 'test_image
     labels_file=os.path.join(dataset_dir, 'labels.csv')
 
     with open(labels_file,'w', newline='') as file:
-
         # headers
-        file.write('original_image_file,transformed_image_file,cyl_diag,cyl_vert,cyl_horiz\n')
+        file.write('original_image_file,transformed_image_file,cyl_diag,cyl_vert,cyl_horiz,a,b,d,e,g,h\n')
         for imgfile in os.listdir(original_path):
 
             # name the img transformed with cylinder warping as name_t.ext
@@ -209,8 +151,8 @@ def create_preliminary_dataset(dataset_dir=os.path.join(os.getcwd(), 'test_image
             t_file = os.path.join(transform_path, imgfile_t)
             out = load_and_save(o_file, t_file)
             if out is None: continue
-            else: d, v, h, h_, w_ = out
-            line = [imgfile, imgfile_t, str(d), str(v), str(h), str(h_), str(w_)]
+            else: d, v, h, h_, w_, transformation_matrix = out
+            line = [imgfile, imgfile_t, str(d), str(v), str(h), str(h_), str(w_), str(transformation_matrix[0,0]), str(transformation_matrix[0,1]), str(transformation_matrix[1,0]), str(transformation_matrix[1,1]), str(transformation_matrix[2,0]), str(transformation_matrix[2,1])]
             file.write(','.join(line))
             file.write('\n')
 
