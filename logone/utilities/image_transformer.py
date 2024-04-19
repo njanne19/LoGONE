@@ -6,6 +6,8 @@ import random as r
 import numpy as np
 from PIL import Image, ImageOps, ImageTransform
 
+second_transform = False
+
 def cylindricalWarp(img, K, rev=False):
     """This function returns the cylindrical warp for a given image and intrinsics matrix K"""
     h_,w_ = img.shape[:2]
@@ -49,8 +51,9 @@ def test_random_transformation(img_file, random_seed=0):
     basename = os.path.basename(img_file)[:-4]
     print(basename)
     cv_img = cv2.imread(img_filepath)
-    padding = 100
-    cv_img = cv2.copyMakeBorder(cv_img, padding, padding, padding, padding, cv2.BORDER_CONSTANT, None, value=0)
+    if second_transform:
+        padding = 100
+        cv_img = cv2.copyMakeBorder(cv_img, padding, padding, padding, padding, cv2.BORDER_CONSTANT, None, value=0)
     img_cylindrical = random_cylindrical_transform(cv_img, random_seed)
     cv2.imwrite(os.path.join(save_dir, f'{basename}_cylindrical.jpg'), img_cylindrical)
 
@@ -71,34 +74,18 @@ def test_transformation(img_file):
         img_cylindrical = apply_cylindrical_transformation(cv_img)
         cv2.imwrite(os.path.join(save_dir, f'{basename}_cylindrical.jpg'), img_cylindrical)
 
-        # projective transformation
-        # cv_img = cv2.imread(img_filepath)
-        # img_projective = apply_projective_transformation(cv_img)
-        # cv2.imwrite(os.path.join(save_dir, f'{basename}_projective.jpg'), img_projective)
-        
-        # Projective transformation
-        # img_projective = apply_projective_transform(img)
-        # img_projective.save(os.path.join(save_dir, f'{basename}_projective.jpg'))
-        
-        # # Rotation
-        # img_rotated = apply_rotation(img)
-        # img_rotated.save(os.path.join(save_dir,f'{basename}_rotated.jpg'))
-        
-        # # Shear transformation
-        # img_sheared = apply_shear(img)
-        # img_sheared.save(os.path.join(save_dir,f'{basename}_sheared.jpg'))
-
 def generate_random_perspective_matrix():
     a, e = np.random.uniform(0.8, 1.2, 2)  # Slight scaling
     b, d = np.random.uniform(-0.5, 0.5, 2)  # Mild rotation/skew
-    g, h = np.random.uniform(-0.0025, 0.0025, 2)
+    g, h = np.random.uniform(-0.001, 0.001, 2)
     return np.array([[a, b, 0], [d, e, 0], [g, h, 1]], dtype=np.float32)
     
     #return transformation_matrix
 
 def apply_perspective_transform(img, transformation_matrix):
     h, w = img.shape[:2]
-    transformed_image = cv2.warpPerspective(img, transformation_matrix, (w, h))
+    img_background = np.ones_like(img) * 255
+    transformed_image = cv2.warpPerspective(img, transformation_matrix, (w, h), dst=img_background, borderMode=cv2.BORDER_TRANSPARENT)
     return transformed_image
 
 def random_cylindrical_transform(img, random_seed=None, padding=100):
@@ -111,7 +98,7 @@ def random_cylindrical_transform(img, random_seed=None, padding=100):
     """
     if random_seed is not None: r.seed(random_seed)
 
-    diag = r.uniform(110, 256)
+    diag = r.uniform(130, 256)
     vert = 2*10**(r.uniform(-1,1)/3)
     horiz = 2*10**(r.uniform(-1,1)/8)
     img = make_border(img)
@@ -130,8 +117,7 @@ def load_and_save(original_img_filepath, transformed_img_filepath):
     transformation_matrix = generate_random_perspective_matrix()
     combo_img = apply_perspective_transform(cyl_img, transformation_matrix)
     # print(transformed_img_filepath)
-    # cv2.imwrite(transformed_img_filepath, combo_img)
-    cv2.imwrite(transformed_img_filepath, cyl_img)
+    cv2.imwrite(transformed_img_filepath, combo_img)
     h_, w_ = img.shape[:2]
     return d,v,h, h_,w_, transformation_matrix
 
@@ -145,19 +131,33 @@ def create_preliminary_dataset(dataset_dir=os.path.join(os.getcwd())):
     with open(labels_file,'w', newline='') as file:
         # headers
         file.write('original_image_file,transformed_image_file,cyl_diag,cyl_vert,cyl_horiz,a,b,d,e,g,h\n')
-        for imgfile in os.listdir(original_path):
+        for imgfile in tqdm(os.listdir(original_path)):
+            for i in range(10):
+                # name the img transformed with cylinder warping as name_t.ext
+                second_transform = False
+                name, ext = os.path.splitext(imgfile)
+                imgfile_t = name + '_t' + str(i) + ext 
+                o_file = os.path.join(original_path, imgfile)
+                t_file = os.path.join(transform_path, imgfile_t)
+                out = load_and_save(o_file, t_file)
+                if out is None: continue
+                else: d, v, h, h_, w_, transformation_matrix = out
+                line = [imgfile, imgfile_t, str(d), str(v), str(h), str(h_), str(w_), str(transformation_matrix[0,0]), str(transformation_matrix[0,1]), str(transformation_matrix[1,0]), str(transformation_matrix[1,1]), str(transformation_matrix[2,0]), str(transformation_matrix[2,1])]
+                file.write(','.join(line))
+                file.write('\n')
 
-            # name the img transformed with cylinder warping as name_t.ext
-            name, ext = os.path.splitext(imgfile)
-            imgfile_t = name + '_t' + ext 
-            o_file = os.path.join(original_path, imgfile)
-            t_file = os.path.join(transform_path, imgfile_t)
-            out = load_and_save(o_file, t_file)
-            if out is None: continue
-            else: d, v, h, h_, w_, transformation_matrix = out
-            line = [imgfile, imgfile_t, str(d), str(v), str(h), str(h_), str(w_), str(transformation_matrix[0,0]), str(transformation_matrix[0,1]), str(transformation_matrix[1,0]), str(transformation_matrix[1,1]), str(transformation_matrix[2,0]), str(transformation_matrix[2,1])]
-            file.write(','.join(line))
-            file.write('\n')
+                # name the img transformed with cylinder warping as name_t.ext
+                second_transform = True
+                name, ext = os.path.splitext(imgfile)
+                imgfile_tt = name + '_tt' + str(i) + ext 
+                o_file = os.path.join(transform_path, imgfile_t)
+                t_file = os.path.join(transform_path, imgfile_tt)
+                out = load_and_save(o_file, t_file)
+                if out is None: continue
+                else: d, v, h, h_, w_, transformation_matrix = out
+                line = [imgfile_t, imgfile_tt, str(d), str(v), str(h), str(h_), str(w_), str(transformation_matrix[0,0]), str(transformation_matrix[0,1]), str(transformation_matrix[1,0]), str(transformation_matrix[1,1]), str(transformation_matrix[2,0]), str(transformation_matrix[2,1])]
+                file.write(','.join(line))
+                file.write('\n')
 
 # # Processing all images in the original_images directory
 # for filename in os.listdir('original_images'):
