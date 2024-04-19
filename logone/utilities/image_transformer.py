@@ -1,5 +1,6 @@
 import os
 import cv2
+from utils import make_border
 from tqdm import tqdm
 import random as r
 import numpy as np
@@ -22,11 +23,10 @@ def cylindricalWarp(img, K, rev=False):
     B[(B[:,0] < 0) | (B[:,0] >= w_) | (B[:,1] < 0) | (B[:,1] >= h_)] = -1
     B = B.reshape(h_,w_,-1)
     
-    img_rgba = cv2.cvtColor(img,cv2.COLOR_BGR2BGRA) # for transparent borders...
+    # img_rgba = cv2.cvtColor(img,cv2.COLOR_BGR2BGRA) # for transparent borders...
     # warp the image according to cylindrical coords
-    img_background = np.ones(img.shape) * 0
-    print(img.shape)
-    return cv2.remap(img_rgba, B[:,:,0].astype(np.float32), B[:,:,1].astype(np.float32), cv2.INTER_AREA, dst=img_background, borderMode=cv2.BORDER_TRANSPARENT)
+    img_background = np.ones_like(img) * 255
+    return cv2.remap(img, B[:,:,0].astype(np.float32), B[:,:,1].astype(np.float32), cv2.INTER_AREA, dst=img_background, borderMode=cv2.BORDER_TRANSPARENT)
 
 def apply_cylindrical_transformation(img, diag=800, vert=2, horiz=2):
     """
@@ -90,8 +90,8 @@ def test_transformation(img_file):
 
 def generate_random_perspective_matrix():
     a, e = np.random.uniform(0.8, 1.2, 2)  # Slight scaling
-    b, d = np.random.uniform(-0.1, 0.1, 2)  # Mild rotation/skew
-    g, h = np.random.uniform(-0.0005, 0.0005, 2)
+    b, d = np.random.uniform(-0.5, 0.5, 2)  # Mild rotation/skew
+    g, h = np.random.uniform(-0.0025, 0.0025, 2)
     return np.array([[a, b, 0], [d, e, 0], [g, h, 1]], dtype=np.float32)
     
     #return transformation_matrix
@@ -111,10 +111,10 @@ def random_cylindrical_transform(img, random_seed=None, padding=100):
     """
     if random_seed is not None: r.seed(random_seed)
 
-    diag = r.uniform(1000, 2000)
-    vert = 2*10**(r.uniform(-1,1)/3) + 1
-    horiz = 2*10**(r.uniform(-1,1)/3) + 1
-    img = cv2.copyMakeBorder(img, padding, padding, padding, padding, cv2.BORDER_CONSTANT, None, value=0)
+    diag = r.uniform(110, 256)
+    vert = 2*10**(r.uniform(-1,1)/3)
+    horiz = 2*10**(r.uniform(-1,1)/8)
+    img = make_border(img)
     img = apply_cylindrical_transformation(img, diag, vert, horiz)
     return img, diag, vert, horiz
 
@@ -126,7 +126,6 @@ def load_and_save(original_img_filepath, transformed_img_filepath):
     if img is None:
         print('Couldnt load image: ', os.path.basename(original_img_filepath))
         return None, None, None
-    print('in load and save', img.shape)
     cyl_img, d, v, h = random_cylindrical_transform(img, random_seed=None)
     transformation_matrix = generate_random_perspective_matrix()
     combo_img = apply_perspective_transform(cyl_img, transformation_matrix)

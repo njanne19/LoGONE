@@ -209,6 +209,15 @@ def place_transformed_logo(img, res=(1080,1920), offset=(0,0)):
         img_new[offset[0]:offset[0]+img.shape[0], offset[1]:offset[1]+img.shape[1]] = img
     return img_new
 
+def make_border(img, value=255, thickness=100):
+    """
+    value - give all three channels this valeu
+    """
+    img_border = np.ones((img.shape[0]+thickness*2, img.shape[1]+thickness*2, img.shape[2]), np.uint8) * value
+    img_border[thickness:img.shape[0]+thickness, thickness:img.shape[1]+thickness] = img
+    return img_border
+
+
 if __name__ == "__main__":
     img = cv2.imread("lego.jpg")
     h, w = img.shape[:2]
