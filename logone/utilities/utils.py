@@ -188,7 +188,9 @@ def normalize_logo_256(img):
         # print(img[:,:,3])
         img[img[:,:,3]==0] = np.array([255,255,255,255])
     sq_img[h_offset:h_offset+h, w_offset:w_offset+w, :] = img[:,:,:3]
-    return sq_img
+    resize_sq_img = np.ones((256,256,3), np.uint8) * 255
+    resize_sq_img = cv2.resize(sq_img, resize_sq_img.shape[:2], resize_sq_img, 0, 0)
+    return resize_sq_img
 
 
 def place_transformed_logo(img, res=(1080,1920), offset=(0,0)):

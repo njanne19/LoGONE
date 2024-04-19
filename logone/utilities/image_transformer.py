@@ -24,7 +24,9 @@ def cylindricalWarp(img, K, rev=False):
     
     img_rgba = cv2.cvtColor(img,cv2.COLOR_BGR2BGRA) # for transparent borders...
     # warp the image according to cylindrical coords
-    return cv2.remap(img_rgba, B[:,:,0].astype(np.float32), B[:,:,1].astype(np.float32), cv2.INTER_AREA, borderMode=cv2.BORDER_TRANSPARENT)
+    img_background = np.ones(img.shape) * 0
+    print(img.shape)
+    return cv2.remap(img_rgba, B[:,:,0].astype(np.float32), B[:,:,1].astype(np.float32), cv2.INTER_AREA, dst=img_background, borderMode=cv2.BORDER_TRANSPARENT)
 
 def apply_cylindrical_transformation(img, diag=800, vert=2, horiz=2):
     """
@@ -42,8 +44,8 @@ def apply_cylindrical_transformation(img, diag=800, vert=2, horiz=2):
     return img_cyl
 
 def test_random_transformation(img_file, random_seed=0):
-    img_filepath = os.path.join(os.getcwd(),'test_images', 'original',img_file)
-    save_dir = os.path.join(os.getcwd(), 'test_images', 'transformed')
+    img_filepath = os.path.join(os.getcwd(),'test_images', 'original_256',img_file)
+    save_dir = os.path.join(os.getcwd(), 'test_images', 'transformed_test')
     basename = os.path.basename(img_file)[:-4]
     print(basename)
     cv_img = cv2.imread(img_filepath)
@@ -124,19 +126,21 @@ def load_and_save(original_img_filepath, transformed_img_filepath):
     if img is None:
         print('Couldnt load image: ', os.path.basename(original_img_filepath))
         return None, None, None
+    print('in load and save', img.shape)
     cyl_img, d, v, h = random_cylindrical_transform(img, random_seed=None)
     transformation_matrix = generate_random_perspective_matrix()
     combo_img = apply_perspective_transform(cyl_img, transformation_matrix)
     # print(transformed_img_filepath)
-    cv2.imwrite(transformed_img_filepath, combo_img)
+    # cv2.imwrite(transformed_img_filepath, combo_img)
+    cv2.imwrite(transformed_img_filepath, cyl_img)
     h_, w_ = img.shape[:2]
     return d,v,h, h_,w_, transformation_matrix
 
-def create_preliminary_dataset(dataset_dir=os.path.join(os.getcwd(), 'logone/utilities/test_images')):
+def create_preliminary_dataset(dataset_dir=os.path.join(os.getcwd())):
 
     # get paths
-    original_path=os.path.join(dataset_dir, 'original')
-    transform_path=os.path.join(dataset_dir, 'transformed')
+    original_path=os.path.join(dataset_dir, 'original_256')
+    transform_path=os.path.join(dataset_dir, 'transformed_256')
     labels_file=os.path.join(dataset_dir, 'labels.csv')
 
     with open(labels_file,'w', newline='') as file:
