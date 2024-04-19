@@ -51,7 +51,7 @@ def test_random_transformation(img_file, random_seed=0):
     basename = os.path.basename(img_file)[:-4]
     print(basename)
     cv_img = cv2.imread(img_filepath)
-    if second_transform:
+    if not second_transform:
         padding = 100
         cv_img = cv2.copyMakeBorder(cv_img, padding, padding, padding, padding, cv2.BORDER_CONSTANT, None, value=0)
     img_cylindrical = random_cylindrical_transform(cv_img, random_seed)
@@ -142,7 +142,7 @@ def create_preliminary_dataset(dataset_dir=os.path.join(os.getcwd())):
                 out = load_and_save(o_file, t_file)
                 if out is None: continue
                 else: d, v, h, h_, w_, transformation_matrix = out
-                line = [imgfile, imgfile_t, str(d), str(v), str(h), str(h_), str(w_), str(transformation_matrix[0,0]), str(transformation_matrix[0,1]), str(transformation_matrix[1,0]), str(transformation_matrix[1,1]), str(transformation_matrix[2,0]), str(transformation_matrix[2,1])]
+                line = [imgfile, imgfile_t, str(d), str(v), str(h), str(transformation_matrix[0,0]), str(transformation_matrix[0,1]), str(transformation_matrix[1,0]), str(transformation_matrix[1,1]), str(transformation_matrix[2,0]), str(transformation_matrix[2,1])]
                 file.write(','.join(line))
                 file.write('\n')
 
