@@ -175,6 +175,38 @@ def cylindricalWarp(img, K, rev=False):
     # else:
     return cv2.remap(img_rgba, B[:,:,0].astype(np.float32), B[:,:,1].astype(np.float32), cv2.INTER_AREA, borderMode=cv2.BORDER_TRANSPARENT)
 
+def normalize_logo_256(img):
+    h,w = img.shape[:2]
+    lg_res = max(img.shape[:2])
+    sq_img = np.ones((lg_res,lg_res,3), np.uint8) * 255
+    h_offset = (lg_res - h)//2
+    w_offset = (lg_res - w)//2
+    if len(img.shape) == 2:
+        img = img[..., np.newaxis]
+        img = np.concatenate((img, img, img), axis=2)
+    if img.shape[2] == 4:
+        # print(img[:,:,3])
+        img[img[:,:,3]==0] = np.array([255,255,255,255])
+    sq_img[h_offset:h_offset+h, w_offset:w_offset+w, :] = img[:,:,:3]
+    return sq_img
+
+
+def place_transformed_logo(img, res=(1080,1920), offset=(0,0)):
+    """
+    img (numpy array): image to transform
+    res (tuple of ints): (height, width)
+    offset (tuples of floats): (x,y) offset of transformed logo placement
+    """
+    height, width = res
+    img_new = np.zeros((height,width,3), np.uint8)
+    if height > offset[0]+img.shape[0]:
+        new_img_height = height - offset[0]
+        new_img_width = width - offset[1]
+        img_new[offset[0]:, offset[1]:] = img[:new_img_height, :new_img_width]
+    else:
+        img_new[offset[0]:offset[0]+img.shape[0], offset[1]:offset[1]+img.shape[1]] = img
+    return img_new
+
 if __name__ == "__main__":
     img = cv2.imread("lego.jpg")
     h, w = img.shape[:2]
