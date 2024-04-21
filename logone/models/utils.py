@@ -238,11 +238,9 @@ def zoom_to_bounding_box(img):
     """
     zoom image to remove white border
     """
-    img_crop = find_bounding_box(img)
+    try: img_crop = find_bounding_box(img)
+    except: img_crop = np.ones((256,256,3), np.uint8) * 255
     img_new = normalize_logo_256(img_crop)
-    print(img_new.shape)
-    plt.imshow(img_new)
-    plt.show()
     return img_new
 
 if __name__ == "__main__":
