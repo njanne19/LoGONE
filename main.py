@@ -2,14 +2,14 @@ import os
 import torch
 import torch.nn as nn
 from logone.dataloaders.logo_transform_dataset import LogoTransformDataset
-from logone.models.logo_transform import PyramidCNN
+from logone.models.logo_transform import PyramidCNN, UNet
 from torch.utils.data import DataLoader
 
 if __name__ == "__main__":
     x = torch.rand((256,256,6))
     h, w, in_channels = x.shape
     out_classes = 9
-    model = PyramidCNN(in_channels, out_classes, h, w)
+    model = UNet(in_channels, out_classes, h, w)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     criterion = nn.CrossEntropyLoss()
@@ -39,8 +39,3 @@ if __name__ == "__main__":
             running_loss = 0.0
 
     print('Finished Training')
-
-    # print('num parameters: ', sum(p.numel() for p in net.parameters() if p.requires_grad))
-
-    # out = net(x)
-    # print(out.shape)

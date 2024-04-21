@@ -9,7 +9,7 @@ from logone.utilities.utils import zoom_to_bounding_box
 
 
 class UNet(nn.Module):
-    def __init__(self, in_channels, out_channels, width, height):
+    def __init__(self, in_channels, out_channels, height, width):
         super(UNet, self).__init__()
 
         # Encoder
