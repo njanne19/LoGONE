@@ -28,7 +28,7 @@ class LogoTransformDataset(Dataset):
         img_path_t = os.path.join(self.img_dir, self.img_paths[idx,0])
         img_path_tt = os.path.join(self.img_dir, self.img_paths[idx,1])
         conc_img = np.concatenate((zoom_to_bounding_box(cv2.imread(img_path_t)), zoom_to_bounding_box(cv2.imread(img_path_tt))), axis=2)
-        return conc_img.astype(np.float32), self.labels[idx]
+        return conc_img.astype(np.float32), self.labels[idx].astype(np.float32)
 
 
 # ############# TESTING DATALOADER #############
