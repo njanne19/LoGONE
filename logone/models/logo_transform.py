@@ -7,72 +7,71 @@ import numpy as np
 import cv2
 from logone.utilities.utils import zoom_to_bounding_box
 
-
 class UNet(nn.Module):
-    def __init__(self, in_channels, out_channels, width, height):
+    def __init__(self, in_channels, height, width):
         super(UNet, self).__init__()
+        self.h_ = height
+        self.w_ = width
+        out_features = 9  # Set the number of output parameters
 
         # Encoder
         self.encoder1 = self.conv_block(in_channels, 64)
         self.encoder2 = self.conv_block(64, 128)
         self.encoder3 = self.conv_block(128, 256)
         self.encoder4 = self.conv_block(256, 512)
-        
+
         # Bottleneck
         self.bottleneck = self.conv_block(512, 1024)
-        
+
         # Decoder
         self.decoder1 = self.conv_block(1024, 512)
         self.decoder2 = self.conv_block(512, 256)
         self.decoder3 = self.conv_block(256, 128)
         self.decoder4 = self.conv_block(128, 64)
-        
-        # Final output
-        self.output = nn.Conv2d(64, out_channels, kernel_size=1)
-        self.out = nn.Sequential(
-            nn.Linear(64*height*width)
-        )
-        
+
+        # Flattening and Fully Connected Layers
+        # The size after the last decoding step needs to be calculated according to your input size
+        # Assuming the input dimensions halve at each down-sampling step in the encoder
+        final_dim = (height // 16) * (width // 16) * 64  # adjust depending on your specific architecture and input size
+        self.fc1 = nn.Linear(final_dim, 512)
+        self.fc2 = nn.Linear(512, out_features)  # Output layer with 9 units
+
     def conv_block(self, in_channels, out_channels):
-        return nn.Sequential(
+        block = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.ReLU(inplace=True)
         )
-    
-    def forward(self, x):
-        # Encoder
-        enc1 = self.encoder1(x)
-        enc2 = nn.functional.max_pool2d(enc1, kernel_size=2, stride=2)
-        enc2 = self.encoder2(enc2)
-        enc3 = nn.functional.max_pool2d(enc2, kernel_size=2, stride=2)
-        enc3 = self.encoder3(enc3)
-        enc4 = nn.functional.max_pool2d(enc3, kernel_size=2, stride=2)
-        enc4 = self.encoder4(enc4)
-        
-        # Bottleneck
-        bottleneck = nn.functional.max_pool2d(enc4, kernel_size=2, stride=2)
-        bottleneck = self.bottleneck(bottleneck)
-        
-        # Decoder
-        dec1 = nn.functional.interpolate(bottleneck, scale_factor=2, mode='bilinear', align_corners=True)
-        dec1 = torch.cat([dec1, enc4], dim=1)
-        dec1 = self.decoder1(dec1)
-        dec2 = nn.functional.interpolate(dec1, scale_factor=2, mode='bilinear', align_corners=True)
-        dec2 = torch.cat([dec2, enc3], dim=1)
-        dec2 = self.decoder2(dec2)
-        dec3 = nn.functional.interpolate(dec2, scale_factor=2, mode='bilinear', align_corners=True)
-        dec3 = torch.cat([dec3, enc2], dim=1)
-        dec3 = self.decoder3(dec3)
-        dec4 = nn.functional.interpolate(dec3, scale_factor=2, mode='bilinear', align_corners=True)
-        dec4 = torch.cat([dec4, enc1], dim=1)
-        dec4 = self.decoder4(dec4)
-        
-        # Final output
-        output = self.output(dec4)
+        return block
 
-        return output
+    def forward(self, x):
+        # Encoding
+        x = x.view(-1,6,self.h_, self.w_)
+        enc1 = self.encoder1(x)
+        enc2 = self.encoder2(F.max_pool2d(enc1, 2))
+        enc3 = self.encoder3(F.max_pool2d(enc2, 2))
+        enc4 = self.encoder4(F.max_pool2d(enc3, 2))
+
+        # Bottleneck
+        bottleneck = self.bottleneck(F.max_pool2d(enc4, 2))
+
+        # Decoding + Concatenation (skip connections)
+        dec1 = self.decoder1(F.interpolate(bottleneck, scale_factor=2, mode='bilinear', align_corners=False))
+        dec1 = torch.cat((dec1, enc4), dim=1)
+        dec2 = self.decoder2(F.interpolate(dec1, scale_factor=2, mode='bilinear', align_corners=False))
+        dec2 = torch.cat((dec2, enc3), dim=1)
+        dec3 = self.decoder3(F.interpolate(dec2, scale_factor=2, mode='bilinear', align_corners=False))
+        dec3 = torch.cat((dec3, enc2), dim=1)
+        dec4 = self.decoder4(F.interpolate(dec3, scale_factor=2, mode='bilinear', align_corners=False))
+        dec4 = torch.cat((dec4, enc1), dim=1)
+
+        # Flatten and fully connected layers
+        flattened = torch.flatten(dec4, start_dim=1)
+        fc1_output = F.relu(self.fc1(flattened))
+        final_output = self.fc2(fc1_output)
+
+        return final_output
 
 class PyramidCNN(nn.Module):
     def __init__(self, input_channels, output_classes, h, w):
@@ -117,5 +116,3 @@ class PyramidCNN(nn.Module):
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
-
-        
