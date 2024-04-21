@@ -11,7 +11,7 @@ if __name__ == "__main__":
     out_classes = 9
     model = PyramidCNN(in_channels, out_classes, h, w)
 
-    model_weight_path = None
+    model_weight_path = os.path.join(os.getcwd(), "logone", 'model_weights', 'weights0.pth')
     if model_weight_path is None:
         model_weight_dir = os.path.join(os.getcwd(), 'logone', 'model_weights')
 
@@ -43,6 +43,8 @@ if __name__ == "__main__":
     loss_norm = len(val_data)//64 + 1
     # Train the model
 
+    training_loss_history = []
+    validation_loss_history = []
     for epoch in range(num_epochs):  # loop over the dataset multiple times
         running_loss = 0.0
         for i, data in enumerate(train_dataloader):
@@ -56,13 +58,16 @@ if __name__ == "__main__":
             # if i == 5: break
             # if i % 2000 == 1999:  # print every 2000 mini-batches
         print('[%d] loss: %.3f' % (epoch + 1, running_loss/(i+1)))
+        with open(os.path.join(os.getcwd(), 'training_loss.csv'), "a") as f:
+            f.write('Epoch ' + str(epoch) + ':   Training Loss=' + str(running_loss))
             # running_loss = 0.0
         val_data = next(iter(val_dataloader))
         val_inputs, val_labels = val_data[0].to(device), val_data[1].to(device)
         val_out = model(val_inputs)
         val_loss = criterion(val_out, val_labels)
-        print(val_out)
-        print(val_out.shape)
+        with open(os.path.join(os.getcwd(), 'validation_loss.csv'), 'a') as f:
+            f.write('Epoch ' + str(epoch) + ': Validation Loss=' + str(val_loss))
         print('Validation loss: ', val_loss.item())
 
     print('Finished Training')
+    torch.save(model.state_dict(), model_weight_path)
