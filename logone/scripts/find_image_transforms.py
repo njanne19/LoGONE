@@ -27,7 +27,10 @@ def align_images(image1, image2):
     index_params = dict(algorithm=1, trees=5)
     search_params = dict()
     flann = cv2.FlannBasedMatcher(index_params, search_params)
-    matches = flann.knnMatch(descriptors1, descriptors2, k=2)
+    try:
+        matches = flann.knnMatch(descriptors1, descriptors2, k=2)
+    except:
+        return None
 
     good_matches = []
     for m, n in matches:
@@ -44,42 +47,6 @@ def align_images(image1, image2):
     try:
         homography, _ = cv2.findHomography(points1, points2, cv2.RANSAC)
     except:
-        return
+        return None
 
-    #height, width, channels = image2.shape
-    #aligned_image = cv2.warpPerspective(image1, homography, (width, height))
-
-    return homography #aligned_image, homography
-
-#Don't use this one
-def align_images_no_good_matches(image1, image2):
-    image1, image2 = resize_to_match(image1, image2)
-
-    #SIFT works better with greyscale
-    gray1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
-    gray2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
-
-    sift = cv2.SIFT_create()
-
-    keypoints1, descriptors1 = sift.detectAndCompute(gray1, None)
-    keypoints2, descriptors2 = sift.detectAndCompute(gray2, None)
-
-    index_params = dict(algorithm=1, trees=5)
-    search_params = dict(checks=50)  # Increase checks for better precision
-    flann = cv2.FlannBasedMatcher(index_params, search_params)
-
-    matches = flann.knnMatch(descriptors1, descriptors2, k=2)
-
-    good_matches = [m[0] for m in matches if len(m) > 0]
-
-    points1 = np.float32([keypoints1[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
-    points2 = np.float32([keypoints2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
-
-    try:
-        homography, _ = cv2.findHomography(points1, points2, cv2.RANSAC)
-    except:
-        return
-    #height, width, channels = image2.shape
-    #aligned_image = cv2.warpPerspective(image1, homography, (width, height))
-
-    return homography #aligned_image, homography
+    return homography
