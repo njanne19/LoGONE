@@ -3,7 +3,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from find_image_transforms import align_images, resize_to_match, normalize_logo_tuple
+from find_image_transforms import align_images, resize_to_match
 
 def dist_from_center(x,y,h,w):
     diff = np.array([(w/2-y)/w,(h/2-x)/h])
@@ -143,6 +143,9 @@ def fake_placer(data_dir = os.path.join(os.getcwd(), 'logone','test_data', 'trai
     first_extraction = extract_image_from_scene(first_frame, first_label)
 
     fake_frames = []
+    last_reeses_homography = None
+    last_mcdonalds_homography = None
+    last_stella_homography = None
     print('generating video...')
     for frame, label in tqdm(zip(frames, labels)):
         logos_two = extract_image_from_scene(frame, label)
@@ -152,13 +155,13 @@ def fake_placer(data_dir = os.path.join(os.getcwd(), 'logone','test_data', 'trai
                 if first_id == next_id:
                     if first_id == 5:
                         fake_logo = cv2.imread(not_reeses_path)[300:700,:,[2,1,0]]
-                        res_img = place_logo(first_logo, next_logo, res_img, fake_logo, next_bbox)
+                        res_img, last_reeses_homography = place_logo(first_logo, next_logo, res_img, fake_logo, next_bbox, last_reeses_homography)
                     elif first_id == 3:
                         fake_logo = cv2.imread(not_mcdonalds_path)[:,:,[2,1,0]]
-                        res_img = place_logo(first_logo, next_logo, res_img, fake_logo, next_bbox)
+                        res_img, last_mcdonalds_homography = place_logo(first_logo, next_logo, res_img, fake_logo, next_bbox, last_mcdonalds_homography)
                     elif first_id == 6:
                         fake_logo = cv2.imread(not_stella_path)[:,:,[2,1,0]]
-                        res_img = place_logo(first_logo, next_logo, res_img, fake_logo, next_bbox)
+                        res_img, last_stella_homography = place_logo(first_logo, next_logo, res_img, fake_logo, next_bbox, last_stella_homography)
         fake_frames.append(res_img)
         # fig, ax = plt.subplots()
         # ax.imshow(res_img[:,:,[2,1,0]])
