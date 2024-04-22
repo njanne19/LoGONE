@@ -165,5 +165,5 @@ def train_model(mode, load=False):
     torch.save(model.state_dict(), model_weight_path)
 
 if __name__ == "__main__":
-    load_plot_model("lg")
-    # train_model('lg', load=False)
+    # load_plot_model("lg")
+    train_model('lg', load=True)
