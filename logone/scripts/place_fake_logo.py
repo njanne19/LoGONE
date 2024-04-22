@@ -26,7 +26,7 @@ def generate_alpha(img):
 
     return alpha
 
-def place_logo(image_one, image_two, image_for_scene, fake_logo, bbox_two):
+def place_logo(image_one, image_two, image_for_scene, fake_logo, bbox_two, past_homography):
     """
     bbox_two = (lx, ly, ux, uy)
     """
@@ -41,10 +41,13 @@ def place_logo(image_one, image_two, image_for_scene, fake_logo, bbox_two):
     # Create an output image for the warped logo with the same size as the ROI and fully transparent background
     warped_logo = np.zeros((h, w, 4), dtype=np.uint8)  # Initialize with transparent background
 
-    try: homography = align_images(image_one, image_two)
-    except: return image_for_scene
-
-    if homography is None: return image_for_scene
+    try: 
+        homography = align_images(image_one, image_two)
+    except:
+        if past_homography is not None:
+            homography = past_homography
+        else:
+            homography = np.eye(3, dtype=np.float32)
 
     # Apply the known transformation matrix to warp the fake_logo
     fake_logo = cv2.resize(fake_logo, (w,h))
@@ -71,7 +74,7 @@ def place_logo(image_one, image_two, image_for_scene, fake_logo, bbox_two):
     # Place the blended ROI back into the original scene image
     image_for_scene[bbox_two[1]:bbox_two[3], bbox_two[0]:bbox_two[2]] = scene_roi[:, :, :3]  # Assuming image_for_scene is without alpha
 
-    return image_for_scene
+    return image_for_scene, homography
 
 def extract_image_from_scene(img, labels):
     """
