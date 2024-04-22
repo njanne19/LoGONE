@@ -5,7 +5,7 @@ import os
 from torch.utils.data import DataLoader, Dataset
 import numpy as np
 import cv2
-from logone.utilities.utils import zoom_to_bounding_box
+from logone.utilities.utils import zoom_to_bounding_box, normalize_logo
 
 class UNet(nn.Module):
     def __init__(self, in_channels, height, width):
@@ -73,6 +73,58 @@ class UNet(nn.Module):
 
         return final_output
 
+class UnPyramidCNN(nn.Module):
+    def __init__(self, input_channels, output_classes, h, w, kernel_size=7):
+        super(UnPyramidCNN, self).__init__()
+        self.h_ = h
+        self.w_ = w
+        self.ch1 = 128
+        self.ch2 = 64
+        self.ch3 = 32
+        self.flat_dim = self.ch3*h*w
+
+        pad = kernel_size//2
+
+        # self.flat_dim = (self.pc*3) * h * w
+        # self.flat_dim = 32*32*3
+
+        # self.conv11 = nn.Conv2d(input_channels, self.pc, kernel_size=5, padding=2)
+        self.conv1 = nn.Conv2d(input_channels, self.ch1, kernel_size=kernel_size, padding=pad)
+        self.conv11 = nn.Conv2d(self.ch1, self.ch1, kernel_size=kernel_size, padding=pad)
+        # self.conv22 = nn.Conv2d(3, self.pc, kernel_size=5, padding=2)
+        self.conv2 = nn.Conv2d(self.ch1, self.ch2, kernel_size=kernel_size, padding=pad)
+        self.conv22 = nn.Conv2d(self.ch2, self.ch2, kernel_size=kernel_size, padding=pad)
+        # self.conv33 = nn.Conv2d(3, self.pc, kernel_size=5, padding=2)
+        self.conv3 = nn.Conv2d(self.ch2, self.ch3, kernel_size=kernel_size, padding=pad)
+        self.conv33 = nn.Conv2d(self.ch3, self.ch3, kernel_size=kernel_size, padding=pad)
+        # self.conv44 = nn.Conv2d(3, self.pc, kernel_size=7, padding=3)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.fc1 = nn.Sequential(
+            nn.Linear(self.flat_dim, 128),
+            nn.ReLU()
+        )
+        self.fc1 = nn.Sequential(
+            nn.Linear(self.flat_dim, 128),
+            nn.ReLU()
+        )
+
+        self.fclast = nn.Linear(128, output_classes)
+
+
+    def forward(self, x):
+        x = x.view(-1,256,self.h_, self.w_)
+        # x = self.pool(F.relu(self.conv1(x)))  # Reduce dimensions
+        # x = self.pool(F.relu(self.conv2(x)))  # Reduce dimensions
+        # x = self.pool(F.relu(self.conv3(x)))  # Reduce dimensions
+        x = F.relu(self.conv11(F.relu(self.conv1(x))))  # Reduce dimensions
+        x = F.relu(self.conv22(F.relu(self.conv2(x))))  # Reduce dimensions
+        x = F.relu(self.conv33(self.conv3(x)))  # Reduce dimensions
+
+        x = x.view(-1,self.flat_dim)
+        x = self.fc1(x)
+        x = self.fclast(x)
+        return x
+
 class PyramidCNN(nn.Module):
     def __init__(self, input_channels, output_classes, h, w, kernel_size=7):
         super(PyramidCNN, self).__init__()
@@ -81,7 +133,10 @@ class PyramidCNN(nn.Module):
         self.ch1 = 8
         self.ch2 = 16
         self.ch3 = 32
-        self.flat_dim = h//8*w//8*self.ch3
+        self.flat_dim1 = h//2*w//2*self.ch1
+        self.flat_dim2 = h//4*w//4*self.ch2
+        self.flat_dim3 = h//8*w//8*self.ch3
+        # print(self.flat_dim1, self.flat_dim2, self.flat_dim3)
 
         pad = kernel_size//2
 
@@ -96,25 +151,39 @@ class PyramidCNN(nn.Module):
         self.conv3 = nn.Conv2d(self.ch2, self.ch3, kernel_size=kernel_size, padding=pad)
         # self.conv44 = nn.Conv2d(3, self.pc, kernel_size=7, padding=3)
         self.pool = nn.MaxPool2d(2, 2)
-        self.fc1 = nn.Linear(self.flat_dim, 128)
-        self.fc2 = nn.Linear(128, output_classes)
+        self.fc1 = nn.Sequential(
+            nn.Linear(self.flat_dim1, 128),
+            nn.ReLU()
+        )
+
+        self.fc2 = nn.Sequential(
+            nn.Linear(self.flat_dim2, 128),
+            nn.ReLU()
+        )
+        self.fc3 = nn.Sequential(
+            nn.Linear(self.flat_dim3, 128),
+            nn.ReLU()
+        )
+
+        self.fclast = nn.Linear(128, output_classes)
 
 
     def forward(self, x):
         # x1 = F.relu(self.conv11(x)) 
         x = x.view(-1,6,self.h_, self.w_)
         x = self.pool(F.relu(self.conv1(x)))  # Reduce dimensions
+        x1 = self.fc1(x.view(-1, self.flat_dim1))
 
         # x2 = F.relu(self.conv22(x))
         x = self.pool(F.relu(self.conv2(x)))  # Reduce dimensions
+        x2 = self.fc2(x.view(-1, self.flat_dim2))
 
         # x3 = F.relu(self.conv33(x))
         x = self.pool(F.relu(self.conv3(x)))  # Reduce dimensions
+        x3 = self.fc3(x.view(-1, self.flat_dim3))
 
         # x4 = F.relu(self.conv44(x))
 
         # x = torch.cat([x1,x2,x3], dim=1)
-        x = x.view(-1, self.flat_dim)
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
+        x = self.fclast(x1+x2+x3)
         return x

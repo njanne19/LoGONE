@@ -17,13 +17,13 @@ def validationloader():
     return DataLoader(val_data, batch_size=590, shuffle=True)
 
 def load_plot_model(mode):
-    model = load_model(mode)
+    model = load_model(mode)[0]
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     data_dir = os.path.join(os.getcwd(), 'logone', 'utilities')
     stat_path = os.path.join(data_dir, 'data_norm_stats.csv')
 
-    val_data = LogoTransformDataset(os.path.join(data_dir, 'labels_test.csv'),
+    val_data = LogoTransformDataset(os.path.join(data_dir, 'labels_train.csv'),
                                     os.path.join(data_dir, 'transformed_256'),
                                     stat_path=stat_path)
     val_dataloader = DataLoader(val_data, batch_size=590, shuffle=True)
@@ -47,8 +47,8 @@ def load_plot_model(mode):
             pred_label = pred_labels[i,:].detach().numpy()
             orig_img = img_stack[:,:,:3].numpy()
             orig_img_transformed = img_stack[:,:,3:].numpy()
-            # pred_img_transformed = apply_logo_transform(orig_img, *pred_label)
-            pred_img_transformed = apply_logo_transform(orig_img, *label)
+            pred_img_transformed = apply_logo_transform(orig_img, *pred_label)
+            # pred_img_transformed = apply_logo_transform(orig_img, *label)
 
             # print('GT Label: ', label)
             # print('Predicted Label: ', pred_label)
@@ -84,16 +84,17 @@ def load_model(mode):
 
     in_channels = 6
     out_classes=9
-    h=256
-    w=256
+    # h=256
+    # w=256
+    h=128
+    w=128
     model = PyramidCNN(in_channels, out_classes, h, w, kernel_size=k_size)
     model.load_state_dict(torch.load(model_weight_path))
-    return model
+    return model, model_weight_path
 
-def train_model(mode):
-    load = False
+def train_model(mode, load=False):
     if load:
-        model = load_model(mode)
+        model, model_weight_path = load_model(mode)
     else:
         model_weight_dir = os.path.join(os.getcwd(), 'logone', 'model_weights')
 
@@ -111,8 +112,10 @@ def train_model(mode):
         model_weight_path = os.path.join(model_weight_dir, 'weights' + str(ui) + '.pth')
         in_channels = 6
         out_classes=9
-        h=256
-        w=256
+        # h=256
+        # w=256
+        h=128
+        w=128
         model = PyramidCNN(in_channels, out_classes, h, w, kernel_size=k_size)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -132,14 +135,8 @@ def train_model(mode):
     train_dataloader = DataLoader(train_data, batch_size=64, shuffle=True)
     val_dataloader = DataLoader(val_data, batch_size=590, shuffle=True)
 
-
     num_epochs = 10
-
-    loss_norm = len(val_data)//64 + 1
     # Train the model
-
-    training_loss_history = []
-    validation_loss_history = []
     for epoch in range(num_epochs):  # loop over the dataset multiple times
         running_loss = 0.0
         for i, data in enumerate(train_dataloader):
@@ -168,5 +165,5 @@ def train_model(mode):
     torch.save(model.state_dict(), model_weight_path)
 
 if __name__ == "__main__":
-    # load_plot_model("lg")
-    train_model('lg')
+    load_plot_model("lg")
+    # train_model('lg', load=False)

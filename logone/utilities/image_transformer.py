@@ -85,7 +85,7 @@ def apply_perspective_transform_terms(img, a,b,d,e,g,h):
     return apply_perspective_transform(img, t_mat)
 
 def apply_logo_transform(img, diag, vert, horiz,a,b,d,e,g,h):
-    img = apply_cylindrical_transformation(img, diag,vert,horiz)
+    # img = apply_cylindrical_transformation(img, diag,vert,horiz)
     return apply_perspective_transform_terms(img,a,b,d,e,g,h)
 
 def apply_perspective_transform(img, transformation_matrix):

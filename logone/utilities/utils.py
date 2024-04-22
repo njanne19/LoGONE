@@ -180,6 +180,40 @@ def cylindricalWarp(img, K, rev=False):
 def norm(data, mean, std):
     return (data - mean)/std
 
+def normalize_logo(img, new_size):
+    h,w = img.shape[:2]
+    lg_res = max(img.shape[:2])
+    sq_img = np.ones((lg_res,lg_res,3), np.uint8) * 255
+    h_offset = (lg_res - h)//2
+    w_offset = (lg_res - w)//2
+    if len(img.shape) == 2:
+        img = img[..., np.newaxis]
+        img = np.concatenate((img, img, img), axis=2)
+    if img.shape[2] == 4:
+        # print(img[:,:,3])
+        img[img[:,:,3]==0] = np.array([255,255,255,255])
+    sq_img[h_offset:h_offset+h, w_offset:w_offset+w, :] = img[:,:,:3]
+    resize_sq_img = np.ones((new_size,new_size,3), np.uint8) * 255
+    resize_sq_img = cv2.resize(sq_img, resize_sq_img.shape[:2], resize_sq_img, 0, 0)
+    return resize_sq_img
+
+def normalize_logo_128(img):
+    h,w = img.shape[:2]
+    lg_res = max(img.shape[:2])
+    sq_img = np.ones((lg_res,lg_res,3), np.uint8) * 255
+    h_offset = (lg_res - h)//2
+    w_offset = (lg_res - w)//2
+    if len(img.shape) == 2:
+        img = img[..., np.newaxis]
+        img = np.concatenate((img, img, img), axis=2)
+    if img.shape[2] == 4:
+        # print(img[:,:,3])
+        img[img[:,:,3]==0] = np.array([255,255,255,255])
+    sq_img[h_offset:h_offset+h, w_offset:w_offset+w, :] = img[:,:,:3]
+    resize_sq_img = np.ones((128,128,3), np.uint8) * 255
+    resize_sq_img = cv2.resize(sq_img, resize_sq_img.shape[:2], resize_sq_img, 0, 0)
+    return resize_sq_img
+
 def normalize_logo_256(img):
     h,w = img.shape[:2]
     lg_res = max(img.shape[:2])
@@ -254,6 +288,23 @@ def zoom_to_bounding_box(img, debug=False):
         ax_.set_title("cropped")
         plt.show()
     return img_new
+
+    
+    
+def build_corr(img1, img2):
+    """
+    build correlation volume (16,16,16,16)
+    """
+    img1 = normalize_logo(img1, 16)
+    img2 = normalize_logo(img2, 16)
+
+    h, w = img1.shape[:2]
+    vol = np.zeros((h,w,h,w), np.uint8)
+    for i in range(h):
+        for j in range(w):
+            vol[i,j,:,:] = np.sum(img1*img2[i,j,:], axis=2)
+
+    return vol
 
 if __name__ == "__main__":
     img = cv2.imread(os.path.join(os.getcwd(), 'logone', 'utilities', 'original_256',"adidas_256.jpg"))
