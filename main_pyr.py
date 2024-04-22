@@ -9,9 +9,22 @@ if __name__ == "__main__":
     x = torch.rand((256,256,6))
     h, w, in_channels = x.shape
     out_classes = 9
-    model = PyramidCNN(in_channels, out_classes, h, w)
 
-    # model_weight_path = os.path.join(os.getcwd(), "logone", 'model_weights', 'weights0.pth')
+    mode = "sm" 
+
+    match mode:
+        case "sm":
+            model_weight_path = os.path.join(os.getcwd(), "logone", 'model_weights', 'weights0.pth')
+            k_size = 3
+        case "med":
+            model_weight_path = os.path.join(os.getcwd(), "logone", 'model_weights', 'weights1.pth')
+            k_size = 5
+        case "lg":
+            model_weight_path = os.path.join(os.getcwd(), "logone", 'model_weights', 'weights2.pth')
+            k_size = 7
+
+    model = PyramidCNN(in_channels, out_classes, h, w, kernel_size=k_size)
+
     # model_weight_path = os.path.join(os.getcwd(), "logone", 'model_weights', 'weights1.pth')
     model_weight_path = None
     if model_weight_path is None:
