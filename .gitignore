@@ -270,3 +270,5 @@ logone/utilities/test_images/*
 # logone/utilities/labels_*
 logone/utilities/transformed_256.zip
 logone/utilities/transformed_256/*
+training_loss.csv
+validation_loss.csv

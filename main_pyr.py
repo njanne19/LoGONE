@@ -11,7 +11,9 @@ if __name__ == "__main__":
     out_classes = 9
     model = PyramidCNN(in_channels, out_classes, h, w)
 
-    model_weight_path = os.path.join(os.getcwd(), "logone", 'model_weights', 'weights0.pth')
+    # model_weight_path = os.path.join(os.getcwd(), "logone", 'model_weights', 'weights0.pth')
+    # model_weight_path = os.path.join(os.getcwd(), "logone", 'model_weights', 'weights1.pth')
+    model_weight_path = None
     if model_weight_path is None:
         model_weight_dir = os.path.join(os.getcwd(), 'logone', 'model_weights')
 

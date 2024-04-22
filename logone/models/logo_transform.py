@@ -74,7 +74,7 @@ class UNet(nn.Module):
         return final_output
 
 class PyramidCNN(nn.Module):
-    def __init__(self, input_channels, output_classes, h, w):
+    def __init__(self, input_channels, output_classes, h, w, kernel_size=7):
         super(PyramidCNN, self).__init__()
         self.h_ = h
         self.w_ = w
@@ -83,15 +83,17 @@ class PyramidCNN(nn.Module):
         self.ch3 = 32
         self.flat_dim = h//8*w//8*self.ch3
 
+        pad = kernel_size//2
+
         # self.flat_dim = (self.pc*3) * h * w
         # self.flat_dim = 32*32*3
 
         # self.conv11 = nn.Conv2d(input_channels, self.pc, kernel_size=5, padding=2)
-        self.conv1 = nn.Conv2d(input_channels, self.ch1, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(input_channels, self.ch1, kernel_size=kernel_size, padding=pad)
         # self.conv22 = nn.Conv2d(3, self.pc, kernel_size=5, padding=2)
-        self.conv2 = nn.Conv2d(self.ch1, self.ch2, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(self.ch1, self.ch2, kernel_size=kernel_size, padding=pad)
         # self.conv33 = nn.Conv2d(3, self.pc, kernel_size=5, padding=2)
-        self.conv3 = nn.Conv2d(self.ch2, self.ch3, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(self.ch2, self.ch3, kernel_size=kernel_size, padding=pad)
         # self.conv44 = nn.Conv2d(3, self.pc, kernel_size=7, padding=3)
         self.pool = nn.MaxPool2d(2, 2)
         self.fc1 = nn.Linear(self.flat_dim, 128)
