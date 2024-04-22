@@ -1,6 +1,6 @@
 import os
 import cv2
-from utils import make_border
+from logone.utilities.utils import make_border
 from tqdm import tqdm
 import random as r
 import numpy as np
@@ -79,8 +79,14 @@ def generate_random_perspective_matrix():
     b, d = np.random.uniform(-0.5, 0.5, 2)  # Mild rotation/skew
     g, h = np.random.uniform(-0.001, 0.001, 2)
     return np.array([[a, b, 0], [d, e, 0], [g, h, 1]], dtype=np.float32)
-    
-    #return transformation_matrix
+
+def apply_perspective_transform_terms(img, a,b,d,e,g,h):
+    t_mat = np.array([[a, b, 0], [d, e, 0], [g, h, 1]], dtype=np.float32)
+    return apply_perspective_transform(img, t_mat)
+
+def apply_logo_transform(img, diag, vert, horiz,a,b,d,e,g,h):
+    img = apply_cylindrical_transformation(img, diag,vert,horiz)
+    return apply_perspective_transform_terms(img,a,b,d,e,g,h)
 
 def apply_perspective_transform(img, transformation_matrix):
     h, w = img.shape[:2]

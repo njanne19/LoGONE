@@ -177,6 +177,9 @@ def cylindricalWarp(img, K, rev=False):
     # else:
     return cv2.remap(img_rgba, B[:,:,0].astype(np.float32), B[:,:,1].astype(np.float32), cv2.INTER_AREA, borderMode=cv2.BORDER_TRANSPARENT)
 
+def norm(data, mean, std):
+    return (data - mean)/std
+
 def normalize_logo_256(img):
     h,w = img.shape[:2]
     lg_res = max(img.shape[:2])
@@ -234,13 +237,22 @@ def find_bounding_box(img):
     img_crop = img[minx:maxx+1, miny:maxy+1]
     return img_crop
 
-def zoom_to_bounding_box(img):
+def zoom_to_bounding_box(img, debug=False):
     """
     zoom image to remove white border
     """
     try: img_crop = find_bounding_box(img)
     except: img_crop = np.ones((256,256,3), np.uint8) * 255
     img_new = normalize_logo_256(img_crop)
+
+    if debug:
+        fig, ax = plt.subplots()
+        ax.imshow(img)
+        ax.set_title("original")
+        fig_, ax_ = plt.subplots()
+        ax_.imshow(img_new)
+        ax_.set_title("cropped")
+        plt.show()
     return img_new
 
 if __name__ == "__main__":
