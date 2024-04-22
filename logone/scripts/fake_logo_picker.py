@@ -4,29 +4,33 @@ from PIL import Image
 import numpy as np
 from place_fake_logo import place_logo
 
-def load_images_and_csv(folder_path, original_images_folder):
-    csv_file = os.path.join(folder_path, folder_path.split(os.sep)[-1] + '.csv')
-    data = pd.read_csv(csv_file)
-
+def load_images_and_annotations(folder_path, original_images_folder):
     images = {}
     previous_boxes = {}
     output_images = []
     
     for image_file in sorted(os.listdir(folder_path)):
-        if image_file.lower().endswith(('.png', '.jpg', '.jpeg')) and image_file.startswith('help'):
+        if image_file.lower().endswith(('.png', '.jpg', '.jpeg')) and image_file.startswith('MVI_1043'):
             image_path = os.path.join(folder_path, image_file)
             image = Image.open(image_path)
+            annotation_file = image_file.rsplit('.', 1)[0] + '.txt'
+            annotation_path = os.path.join(folder_path, annotation_file)
 
-            current_data = data[data['image_name'] == image_file]
+            if not os.path.exists(annotation_path):
+                continue  # Skip if the annotation file does not exist
+            
             current_boxes = []
-
-            for index, row in current_data.iterrows():
-                bbox = (row['xmin'], row['ymin'], row['xmax'], row['ymax'])
-                cropped_image = image.crop(bbox)
-                save_path = os.path.join(folder_path, f"cropped_{row['class_label']}_{index}.png")
-                cropped_image.save(save_path)
-                
-                current_boxes.append((bbox, row['class_label'], save_path))
+            with open(annotation_path, 'r') as file:
+                for line in file:
+                    parts = line.strip().split()
+                    if len(parts) == 5:
+                        class_label, xmin, ymin, xmax, ymax = parts
+                        bbox = (int(xmin), int(ymin), int(xmax), int(ymax))
+                        cropped_image = image.crop(bbox)
+                        save_path = os.path.join(folder_path, f"cropped_{class_label}_{image_file}")
+                        cropped_image.save(save_path)
+                        
+                        current_boxes.append((bbox, class_label, save_path))
 
             if previous_boxes:
                 for current_box in current_boxes:
