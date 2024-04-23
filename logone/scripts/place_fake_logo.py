@@ -3,7 +3,8 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from find_image_transforms import align_images, resize_to_match, normalize_logo_tuple
+from find_image_transforms import align_images, resize_to_match
+import pandas as pd 
 
 def dist_from_center(x,y,h,w):
     diff = np.array([(w/2-y)/w,(h/2-x)/h])
@@ -43,6 +44,11 @@ def place_logo(image_one, image_two, image_for_scene, fake_logo, bbox_two, past_
 
     try: 
         homography = align_images(image_one, image_two)
+        if homography is None:
+            if past_homography is not None:
+                homography = past_homography
+            else:
+                homography = np.eye(3, dtype=np.float32)
     except:
         if past_homography is not None:
             homography = past_homography

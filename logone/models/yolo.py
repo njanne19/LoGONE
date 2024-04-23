@@ -27,35 +27,37 @@ def download_file(url, filepath):
 model = "yolov8n"
 
 
-# Check to see if a weights folder for this model 
-current_parent_directory = os.path.abspath(os.path.join(__file__, os.pardir))
-weights_folder = os.path.join(current_parent_directory, "weights")
-model_folder = os.path.join(weights_folder, "yolo")
+# # Check to see if a weights folder for this model 
+# current_parent_directory = os.path.abspath(os.path.join(__file__, os.pardir))
+# weights_folder = os.path.join(current_parent_directory, "weights")
+# model_folder = os.path.join(weights_folder, "yolo")
 
-os.makedirs(model_folder, exist_ok=True)
-os.makedirs(weights_folder, exist_ok=True)
+# os.makedirs(model_folder, exist_ok=True)
+# os.makedirs(weights_folder, exist_ok=True)
 
-# Download the model weights
-model_url = YOLO_MODEL_DICT[model]
-model_filepath = os.path.join(model_folder, f"{model}.pt")
-download_file(model_url, model_filepath)
+# # Download the model weights
+# model_url = YOLO_MODEL_DICT[model]
+# model_filepath = os.path.join(model_folder, f"{model}.pt")
+# download_file(model_url, model_filepath)
 
-# Load the model 
-model = YOLO(model_filepath)
 
 # Get the dataset folder 
-dataset_file = 'logone/data/openlogo/yolo_split1/data.yaml'
+weights_file = 'logone/yolov8n-allclass-round-two/weights/best.pt'
+dataset_file = 'logone/data/openlogo/yolo_finetune_split/data.yaml'
+
+# Load the model 
+model = YOLO(weights_file)
 
 # Train the model 
 results = model.train(
     data=dataset_file, 
-    epochs=100, 
+    epochs=500, 
     imgsz=640, 
     project='logone',
-    batch=-1,
-    save_period=25,
-    cache = True,
-    name='yolov8n-allclass',)
+    batch=24,
+    save_period=50,
+    #cache = True,
+    name='yolov8n-finetune-round-one')
 
 # Evalute the model 
 metrics = model.val() 

@@ -1,4 +1,10 @@
 # LoGONE - An instance detection network for the automatic retouching of branded media 
+![LoGONE Replacement](media/LogoReplacement.png)
+The above image shows diffusion-generated logos superimposed back on the original video. 
+
+![LoGONE Detection](media/LogoDetection.png)
+The above image shows YOLOv8 working as our detection network. 
+
 LoGONE is an instance detection network for the automatic retouching of branded media, namely still images and videos. When LoGONE detects a brand (logo/reference/etc.), to the best of its ability, it will attempt to crop that brand from the still, generate a suitable replacement using deep learning techniques, and superimpose that replacement back on the original still. To do this, LoGONE has two fundamental components: 
 
 ## Instance Detection 
