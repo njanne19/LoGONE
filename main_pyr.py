@@ -73,13 +73,13 @@ def load_plot_model(mode):
 def load_model(mode):
     match mode:
         case "sm":
-            model_weight_path = os.path.join(os.getcwd(), "logone", 'model_weights', 'weights0.pth')
+            model_weight_path = os.path.join(os.getcwd(), "logone", 'model_weights', 'cylweights0.pth')
             k_size = 3
         case "med":
-            model_weight_path = os.path.join(os.getcwd(), "logone", 'model_weights', 'weights1.pth')
+            model_weight_path = os.path.join(os.getcwd(), "logone", 'model_weights', 'cylweights1.pth')
             k_size = 5
         case "lg":
-            model_weight_path = os.path.join(os.getcwd(), "logone", 'model_weights', 'weights2.pth')
+            model_weight_path = os.path.join(os.getcwd(), "logone", 'model_weights', 'cylweights2.pth')
             k_size = 7
 
     in_channels = 6
@@ -109,7 +109,7 @@ def train_model(mode, load=False):
                 ui = 2
                 k_size=7
 
-        model_weight_path = os.path.join(model_weight_dir, 'weights' + str(ui) + '.pth')
+        model_weight_path = os.path.join(model_weight_dir, 'cylweights' + str(ui) + '.pth')
         in_channels = 6
         out_classes=9
         # h=256
@@ -166,4 +166,4 @@ def train_model(mode, load=False):
 
 if __name__ == "__main__":
     # load_plot_model("lg")
-    train_model('lg', load=True)
+    train_model('lg', load=False)
